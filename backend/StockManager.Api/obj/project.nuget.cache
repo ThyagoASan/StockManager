@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "YW2aP19zNxk=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\NoxiePC\\StockManager\\backend\\StockManager.Api\\StockManager.Api.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\NoxiePC\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.3\\microsoft.aspnetcore.openapi.10.0.3.nupkg.sha512",
+    "C:\\Users\\NoxiePC\\.nuget\\packages\\microsoft.openapi\\2.0.0\\microsoft.openapi.2.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
