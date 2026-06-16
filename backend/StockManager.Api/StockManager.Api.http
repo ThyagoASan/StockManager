@@ -1,6 +1,11 @@
-@StockManager.Api_HostAddress = http://localhost:5009
+POST http://localhost:5009/api/Productos
+Content-Type: application/json
 
-GET {{StockManager.Api_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
+{
+  "nombre": "Monitor 24 pulgadas",
+  "descripcion": "Monitor Full HD",
+  "precio": 180.50,
+  "stock": 7,
+  "stockMinimo": 2,
+  "categoriaId": 1
+}

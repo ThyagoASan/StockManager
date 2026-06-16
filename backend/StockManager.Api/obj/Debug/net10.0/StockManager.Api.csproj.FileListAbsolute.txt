@@ -190,3 +190,6 @@ C:\Users\NoxiePC\Facultad Thyago\Cosas Personales\StockManager\backend\StockMana
 C:\Users\NoxiePC\Facultad Thyago\Cosas Personales\StockManager\backend\StockManager.Api\obj\Debug\net10.0\StockManager.Api.pdb
 C:\Users\NoxiePC\Facultad Thyago\Cosas Personales\StockManager\backend\StockManager.Api\obj\Debug\net10.0\StockManager.Api.genruntimeconfig.cache
 C:\Users\NoxiePC\Facultad Thyago\Cosas Personales\StockManager\backend\StockManager.Api\obj\Debug\net10.0\ref\StockManager.Api.dll
+C:\Users\NoxiePC\Facultad Thyago\Cosas Personales\StockManager\backend\StockManager.Api\bin\Debug\net10.0\Swashbuckle.AspNetCore.Swagger.dll
+C:\Users\NoxiePC\Facultad Thyago\Cosas Personales\StockManager\backend\StockManager.Api\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+C:\Users\NoxiePC\Facultad Thyago\Cosas Personales\StockManager\backend\StockManager.Api\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerUI.dll

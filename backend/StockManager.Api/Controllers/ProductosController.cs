@@ -19,8 +19,55 @@ public class ProductosController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Producto>>> GetProductos()
     {
-        var productos = await _context.Productos.ToListAsync();
+        return Ok(await _context.Productos.ToListAsync());
+    }
 
-        return Ok(productos);
+    [HttpGet("{id}")]
+    public async Task<ActionResult<Producto>> GetProducto(int id)
+    {
+        var producto = await _context.Productos.FindAsync(id);
+
+        if (producto == null)
+            return NotFound();
+
+        return Ok(producto);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<Producto>> CrearProducto(Producto producto)
+    {
+        producto.FechaCreacion = DateTime.Now;
+
+        _context.Productos.Add(producto);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(GetProducto), new { id = producto.Id }, producto);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> ActualizarProducto(int id, Producto producto)
+    {
+        if (id != producto.Id)
+            return BadRequest();
+
+        _context.Entry(producto).State = EntityState.Modified;
+
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> EliminarProducto(int id)
+    {
+        var producto = await _context.Productos.FindAsync(id);
+
+        if (producto == null)
+            return NotFound();
+
+        _context.Productos.Remove(producto);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
     }
 }
