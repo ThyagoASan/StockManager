@@ -2,11 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StockManager.Api.Data;
 using StockManager.Api.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace StockManager.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class ProductosController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
