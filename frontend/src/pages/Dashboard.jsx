@@ -93,8 +93,6 @@ function Dashboard() {
       });
 
       setMostrarFormulario(false);
-      setError("");
-
       await cargarProductos();
     } catch (error) {
       console.error(error);
@@ -103,10 +101,7 @@ function Dashboard() {
   };
 
   const editarProducto = (producto) => {
-    setProductoEditando({
-      ...producto,
-    });
-
+    setProductoEditando({ ...producto });
     setMostrarFormulario(false);
   };
 
@@ -125,14 +120,11 @@ function Dashboard() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            id: productoEditando.id,
-            nombre: productoEditando.nombre,
-            descripcion: productoEditando.descripcion,
+            ...productoEditando,
             precio: Number(productoEditando.precio),
             stock: Number(productoEditando.stock),
             stockMinimo: Number(productoEditando.stockMinimo),
             categoriaId: Number(productoEditando.categoriaId),
-            fechaCreacion: productoEditando.fechaCreacion,
           }),
         }
       );
@@ -142,8 +134,6 @@ function Dashboard() {
       }
 
       setProductoEditando(null);
-      setError("");
-
       await cargarProductos();
     } catch (error) {
       console.error(error);
@@ -156,9 +146,7 @@ function Dashboard() {
       "¿Seguro que querés eliminar este producto?"
     );
 
-    if (!confirmar) {
-      return;
-    }
+    if (!confirmar) return;
 
     try {
       const token = localStorage.getItem("token");
@@ -177,8 +165,6 @@ function Dashboard() {
         throw new Error("No se pudo eliminar el producto");
       }
 
-      setError("");
-
       await cargarProductos();
     } catch (error) {
       console.error(error);
@@ -191,248 +177,333 @@ function Dashboard() {
     window.location.reload();
   };
 
+  const stockBajo = productos.filter(
+    (p) => p.stock <= p.stockMinimo
+  ).length;
+
+  const sinStock = productos.filter(
+    (p) => p.stock === 0
+  ).length;
+
   return (
-    <div>
-      <h1>StockManager</h1>
+    <div className="dashboard">
+      <aside className="sidebar">
+        <h2>StockManager</h2>
 
-      <button onClick={cerrarSesion}>
-        Cerrar sesión
-      </button>
+        <div className="sidebar-item active">
+          Dashboard
+        </div>
 
-      <h2>Productos</h2>
+        <div className="sidebar-item">
+          Productos
+        </div>
 
-      <button
-        onClick={() => {
-          setMostrarFormulario(!mostrarFormulario);
-          setProductoEditando(null);
-        }}
-      >
-        {mostrarFormulario ? "Cancelar" : "Nuevo producto"}
-      </button>
+        <div className="sidebar-item">
+          Categorías
+        </div>
 
-      {mostrarFormulario && (
-        <form onSubmit={crearProducto}>
-          <h3>Nuevo producto</h3>
+        <div className="sidebar-item">
+          Movimientos
+        </div>
+      </aside>
 
+      <main className="main-content">
+        <div className="topbar">
           <div>
-            <label>Nombre</label>
-            <input
-              type="text"
-              name="nombre"
-              value={nuevoProducto.nombre}
-              onChange={handleChange}
-              required
-            />
+            <h1>Dashboard</h1>
+            <p>Gestión de inventario</p>
           </div>
-
-          <div>
-            <label>Descripción</label>
-            <input
-              type="text"
-              name="descripcion"
-              value={nuevoProducto.descripcion}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div>
-            <label>Precio</label>
-            <input
-              type="number"
-              step="0.01"
-              name="precio"
-              value={nuevoProducto.precio}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div>
-            <label>Stock</label>
-            <input
-              type="number"
-              name="stock"
-              value={nuevoProducto.stock}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div>
-            <label>Stock mínimo</label>
-            <input
-              type="number"
-              name="stockMinimo"
-              value={nuevoProducto.stockMinimo}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div>
-            <label>Categoría ID</label>
-            <input
-              type="number"
-              name="categoriaId"
-              value={nuevoProducto.categoriaId}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <button type="submit">
-            Guardar producto
-          </button>
-        </form>
-      )}
-
-      {productoEditando && (
-        <form onSubmit={guardarEdicion}>
-          <h3>Editar producto</h3>
-
-          <div>
-            <label>Nombre</label>
-            <input
-              type="text"
-              value={productoEditando.nombre}
-              onChange={(e) =>
-                setProductoEditando({
-                  ...productoEditando,
-                  nombre: e.target.value,
-                })
-              }
-              required
-            />
-          </div>
-
-          <div>
-            <label>Descripción</label>
-            <input
-              type="text"
-              value={productoEditando.descripcion || ""}
-              onChange={(e) =>
-                setProductoEditando({
-                  ...productoEditando,
-                  descripcion: e.target.value,
-                })
-              }
-            />
-          </div>
-
-          <div>
-            <label>Precio</label>
-            <input
-              type="number"
-              step="0.01"
-              value={productoEditando.precio}
-              onChange={(e) =>
-                setProductoEditando({
-                  ...productoEditando,
-                  precio: e.target.value,
-                })
-              }
-              required
-            />
-          </div>
-
-          <div>
-            <label>Stock</label>
-            <input
-              type="number"
-              value={productoEditando.stock}
-              onChange={(e) =>
-                setProductoEditando({
-                  ...productoEditando,
-                  stock: e.target.value,
-                })
-              }
-              required
-            />
-          </div>
-
-          <div>
-            <label>Stock mínimo</label>
-            <input
-              type="number"
-              value={productoEditando.stockMinimo}
-              onChange={(e) =>
-                setProductoEditando({
-                  ...productoEditando,
-                  stockMinimo: e.target.value,
-                })
-              }
-              required
-            />
-          </div>
-
-          <div>
-            <label>Categoría ID</label>
-            <input
-              type="number"
-              value={productoEditando.categoriaId}
-              onChange={(e) =>
-                setProductoEditando({
-                  ...productoEditando,
-                  categoriaId: e.target.value,
-                })
-              }
-              required
-            />
-          </div>
-
-          <button type="submit">
-            Guardar cambios
-          </button>
 
           <button
-            type="button"
-            onClick={() => setProductoEditando(null)}
+            className="logout-button"
+            onClick={cerrarSesion}
           >
-            Cancelar
+            Cerrar sesión
           </button>
-        </form>
-      )}
+        </div>
 
-      {error && <p>{error}</p>}
+        <section className="stats">
+          <div className="stat-card">
+            <h3>Productos</h3>
+            <strong>{productos.length}</strong>
+          </div>
 
-      <table border="1">
-        <thead>
-          <tr>
-            <th>Id</th>
-            <th>Nombre</th>
-            <th>Precio</th>
-            <th>Stock</th>
-            <th>Stock mínimo</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
+          <div className="stat-card">
+            <h3>Stock bajo</h3>
+            <strong>{stockBajo}</strong>
+          </div>
 
-        <tbody>
-          {productos.map((producto) => (
-            <tr key={producto.id}>
-              <td>{producto.id}</td>
-              <td>{producto.nombre}</td>
-              <td>${producto.precio}</td>
-              <td>{producto.stock}</td>
-              <td>{producto.stockMinimo}</td>
+          <div className="stat-card">
+            <h3>Sin stock</h3>
+            <strong>{sinStock}</strong>
+          </div>
+        </section>
 
-              <td>
+        <section className="table-card">
+          <div className="actions">
+            <h2>Productos</h2>
+
+            <button
+              className="new-button"
+              onClick={() => {
+                setMostrarFormulario(!mostrarFormulario);
+                setProductoEditando(null);
+              }}
+            >
+              {mostrarFormulario ? "Cancelar" : "Nuevo producto"}
+            </button>
+          </div>
+
+          {mostrarFormulario && (
+            <form
+              className="product-form"
+              onSubmit={crearProducto}
+            >
+              <h3>Nuevo producto</h3>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Nombre</label>
+                  <input
+                    name="nombre"
+                    value={nuevoProducto.nombre}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Descripción</label>
+                  <input
+                    name="descripcion"
+                    value={nuevoProducto.descripcion}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Precio</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="precio"
+                    value={nuevoProducto.precio}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Stock</label>
+                  <input
+                    type="number"
+                    name="stock"
+                    value={nuevoProducto.stock}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Stock mínimo</label>
+                  <input
+                    type="number"
+                    name="stockMinimo"
+                    value={nuevoProducto.stockMinimo}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Categoría ID</label>
+                  <input
+                    type="number"
+                    name="categoriaId"
+                    value={nuevoProducto.categoriaId}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                className="primary-button"
+                type="submit"
+              >
+                Guardar producto
+              </button>
+            </form>
+          )}
+
+          {productoEditando && (
+            <form
+              className="product-form"
+              onSubmit={guardarEdicion}
+            >
+              <h3>Editar producto</h3>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Nombre</label>
+                  <input
+                    value={productoEditando.nombre}
+                    onChange={(e) =>
+                      setProductoEditando({
+                        ...productoEditando,
+                        nombre: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Descripción</label>
+                  <input
+                    value={productoEditando.descripcion || ""}
+                    onChange={(e) =>
+                      setProductoEditando({
+                        ...productoEditando,
+                        descripcion: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Precio</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={productoEditando.precio}
+                    onChange={(e) =>
+                      setProductoEditando({
+                        ...productoEditando,
+                        precio: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Stock</label>
+                  <input
+                    type="number"
+                    value={productoEditando.stock}
+                    onChange={(e) =>
+                      setProductoEditando({
+                        ...productoEditando,
+                        stock: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Stock mínimo</label>
+                  <input
+                    type="number"
+                    value={productoEditando.stockMinimo}
+                    onChange={(e) =>
+                      setProductoEditando({
+                        ...productoEditando,
+                        stockMinimo: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Categoría ID</label>
+                  <input
+                    type="number"
+                    value={productoEditando.categoriaId}
+                    onChange={(e) =>
+                      setProductoEditando({
+                        ...productoEditando,
+                        categoriaId: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="form-actions">
                 <button
-                  onClick={() => editarProducto(producto)}
+                  className="primary-button"
+                  type="submit"
                 >
-                  Editar
+                  Guardar cambios
                 </button>
 
                 <button
-                  onClick={() => eliminarProducto(producto.id)}
+                  className="cancel-button"
+                  type="button"
+                  onClick={() => setProductoEditando(null)}
                 >
-                  Eliminar
+                  Cancelar
                 </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              </div>
+            </form>
+          )}
+
+          {error && <p>{error}</p>}
+
+          <table className="products-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th>Stock mínimo</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {productos.map((producto) => (
+                <tr key={producto.id}>
+                  <td>{producto.id}</td>
+                  <td>{producto.nombre}</td>
+                  <td>${producto.precio}</td>
+
+                  <td
+                    className={
+                      producto.stock <= producto.stockMinimo
+                        ? "low-stock"
+                        : ""
+                    }
+                  >
+                    {producto.stock}
+                  </td>
+
+                  <td>{producto.stockMinimo}</td>
+
+                  <td>
+                    <button
+                      className="edit-button"
+                      onClick={() => editarProducto(producto)}
+                    >
+                      Editar
+                    </button>
+
+                    <button
+                      className="delete-button"
+                      onClick={() =>
+                        eliminarProducto(producto.id)
+                      }
+                    >
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      </main>
     </div>
   );
 }

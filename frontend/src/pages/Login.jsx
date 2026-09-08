@@ -6,51 +6,72 @@ function Login({ onLogin }) {
   const [password, setPassword] = useState("");
   const [mensaje, setMensaje] = useState("");
 
-  const handleSubmit = async (e) => {
+  const iniciarSesion = async (e) => {
     e.preventDefault();
+    setMensaje("");
 
     try {
-      const data = await api.login(email, password);
+      const response = await api.login(email, password);
 
-      localStorage.setItem("token", data.token);
+      localStorage.setItem("token", response.token);
+      onLogin(response.token);
 
-      onLogin(data.token);
-      setMensaje("Inicio de sesión correcto");
-    }catch (error) {
-  console.error("ERROR LOGIN:", error);
-  setMensaje("Error al iniciar sesión");
-}
+    } catch (error) {
+      console.error(error);
+      setMensaje("Email o contraseña incorrectos");
+    }
   };
 
   return (
-    <div>
-      <h1>StockManager</h1>
+    <div className="login-page">
+      <div className="login-card">
 
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
+        <h1>StockManager</h1>
 
-        <div>
-          <label>Contraseña</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
+        <p className="login-subtitle">
+          Sistema de gestión de inventario
+        </p>
 
-        <button type="submit">
-          Iniciar sesión
-        </button>
-      </form>
+        <form onSubmit={iniciarSesion}>
 
-      <p>{mensaje}</p>
+          <div className="form-group">
+            <label>Email</label>
+            <input
+              type="email"
+              placeholder="admin@stockmanager.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Contraseña</label>
+            <input
+              type="password"
+              placeholder="••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="primary-button"
+          >
+            Iniciar sesión
+          </button>
+
+        </form>
+
+        {mensaje && (
+          <p className="login-message">
+            {mensaje}
+          </p>
+        )}
+
+      </div>
     </div>
   );
 }
