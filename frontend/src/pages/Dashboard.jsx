@@ -1,511 +1,154 @@
 import { useEffect, useState } from "react";
+const BASE = import.meta.env.VITE_API_URL || "http://localhost:5009/api";
+const initial = { nombre: "", descripcion: "", precio: 0, stock: 0, stockMinimo: 5, categoriaId: "" };
 
-function Dashboard() {
+export default function Dashboard() {
+  const [seccion, setSeccion] = useState("Dashboard");
   const [productos, setProductos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [movimientos, setMovimientos] = useState([]);
+  const [form, setForm] = useState(initial);
+  const [editId, setEditId] = useState(null);
+  const [categoriaNombre, setCategoriaNombre] = useState("");
+  const [categoriaEditId, setCategoriaEditId] = useState(null);
+  const [mov, setMov] = useState({ productoId: "", tipo: "entrada", cantidad: 1, motivo: "" });
   const [error, setError] = useState("");
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [productoEditando, setProductoEditando] = useState(null);
+  const [mensaje, setMensaje] = useState("");
+  const [cargando, setCargando] = useState(false);
 
-  const [nuevoProducto, setNuevoProducto] = useState({
-    nombre: "",
-    descripcion: "",
-    precio: "",
-    stock: "",
-    stockMinimo: "",
-    categoriaId: 1,
-  });
-
-  const cargarProductos = async () => {
-    try {
-      const token = localStorage.getItem("token");
-
-      const response = await fetch(
-        "http://localhost:5009/api/Productos",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("No se pudieron cargar los productos");
-      }
-
-      const data = await response.json();
-      setProductos(data);
-      setError("");
-    } catch (error) {
-      console.error(error);
-      setError("Error al cargar productos");
-    }
-  };
-
-  useEffect(() => {
-    cargarProductos();
-  }, []);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setNuevoProducto({
-      ...nuevoProducto,
-      [name]: value,
+  async function request(path, options = {}) {
+    const response = await fetch(BASE + path, {
+      ...options,
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + localStorage.getItem("token"), ...options.headers }
     });
-  };
+    if (response.status === 401) {
+      localStorage.removeItem("token");
+      window.location.reload();
+      throw new Error("Sesión vencida");
+    }
+    if (!response.ok) {
+      let detail;
+      try { detail = await response.json(); } catch { detail = null; }
+      throw new Error(typeof detail === "string" ? detail : detail?.mensaje || detail?.title || "Error HTTP " + response.status);
+    }
+    return response.status === 204 ? null : response.json();
+  }
 
-  const crearProducto = async (e) => {
+  async function cargar() {
+    setCargando(true);
+    try {
+      const [p, c, m] = await Promise.all([request("/Productos"), request("/Categorias"), request("/Movimientos")]);
+      setProductos(p); setCategorias(c); setMovimientos(m); setError("");
+    } catch (e) { setError(e.message); }
+    finally { setCargando(false); }
+  }
+  useEffect(() => { cargar(); }, []);
+
+  async function ejecutar(accion, texto) {
+    setError(""); setMensaje("");
+    try { await accion(); setMensaje(texto); await cargar(); }
+    catch (e) { setError(e.message); }
+  }
+
+  function guardarProducto(e) {
     e.preventDefault();
+    const dto = { ...form, precio: Number(form.precio), stock: Number(form.stock), stockMinimo: Number(form.stockMinimo), categoriaId: Number(form.categoriaId) };
+    ejecutar(async () => {
+      await request(editId ? "/Productos/" + editId : "/Productos", { method: editId ? "PUT" : "POST", body: JSON.stringify(dto) });
+      setEditId(null); setForm(initial);
+    }, "Producto guardado.");
+  }
 
-    try {
-      const token = localStorage.getItem("token");
-
-      const response = await fetch(
-        "http://localhost:5009/api/Productos",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            nombre: nuevoProducto.nombre,
-            descripcion: nuevoProducto.descripcion,
-            precio: Number(nuevoProducto.precio),
-            stock: Number(nuevoProducto.stock),
-            stockMinimo: Number(nuevoProducto.stockMinimo),
-            categoriaId: Number(nuevoProducto.categoriaId),
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("No se pudo crear el producto");
-      }
-
-      setNuevoProducto({
-        nombre: "",
-        descripcion: "",
-        precio: "",
-        stock: "",
-        stockMinimo: "",
-        categoriaId: 1,
-      });
-
-      setMostrarFormulario(false);
-      await cargarProductos();
-    } catch (error) {
-      console.error(error);
-      setError("Error al crear producto");
-    }
-  };
-
-  const editarProducto = (producto) => {
-    setProductoEditando({ ...producto });
-    setMostrarFormulario(false);
-  };
-
-  const guardarEdicion = async (e) => {
+  function guardarCategoria(e) {
     e.preventDefault();
+    ejecutar(async () => {
+      await request(categoriaEditId ? "/Categorias/" + categoriaEditId : "/Categorias", { method: categoriaEditId ? "PUT" : "POST", body: JSON.stringify({ nombre: categoriaNombre }) });
+      setCategoriaEditId(null); setCategoriaNombre("");
+    }, "Categoría guardada.");
+  }
 
-    try {
-      const token = localStorage.getItem("token");
+  function registrarMovimiento(e) {
+    e.preventDefault();
+    ejecutar(async () => {
+      await request("/Movimientos", { method: "POST", body: JSON.stringify({ ...mov, productoId: Number(mov.productoId), cantidad: Number(mov.cantidad) }) });
+      setMov({ productoId: "", tipo: "entrada", cantidad: 1, motivo: "" });
+    }, "Movimiento registrado.");
+  }
 
-      const response = await fetch(
-        `http://localhost:5009/api/Productos/${productoEditando.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            ...productoEditando,
-            precio: Number(productoEditando.precio),
-            stock: Number(productoEditando.stock),
-            stockMinimo: Number(productoEditando.stockMinimo),
-            categoriaId: Number(productoEditando.categoriaId),
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("No se pudo actualizar el producto");
-      }
-
-      setProductoEditando(null);
-      await cargarProductos();
-    } catch (error) {
-      console.error(error);
-      setError("Error al actualizar producto");
-    }
-  };
-
-  const eliminarProducto = async (id) => {
-    const confirmar = window.confirm(
-      "¿Seguro que querés eliminar este producto?"
-    );
-
-    if (!confirmar) return;
-
-    try {
-      const token = localStorage.getItem("token");
-
-      const response = await fetch(
-        `http://localhost:5009/api/Productos/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("No se pudo eliminar el producto");
-      }
-
-      await cargarProductos();
-    } catch (error) {
-      console.error(error);
-      setError("Error al eliminar producto");
-    }
-  };
-
-  const cerrarSesion = () => {
-    localStorage.removeItem("token");
-    window.location.reload();
-  };
-
-  const stockBajo = productos.filter(
-    (p) => p.stock <= p.stockMinimo
-  ).length;
-
-  const sinStock = productos.filter(
-    (p) => p.stock === 0
-  ).length;
-
-  return (
-    <div className="dashboard">
-      <aside className="sidebar">
-        <h2>StockManager</h2>
-
-        <div className="sidebar-item active">
-          Dashboard
-        </div>
-
-        <div className="sidebar-item">
-          Productos
-        </div>
-
-        <div className="sidebar-item">
-          Categorías
-        </div>
-
-        <div className="sidebar-item">
-          Movimientos
-        </div>
-      </aside>
-
-      <main className="main-content">
-        <div className="topbar">
-          <div>
-            <h1>Dashboard</h1>
-            <p>Gestión de inventario</p>
-          </div>
-
-          <button
-            className="logout-button"
-            onClick={cerrarSesion}
-          >
-            Cerrar sesión
-          </button>
-        </div>
-
-        <section className="stats">
-          <div className="stat-card">
-            <h3>Productos</h3>
-            <strong>{productos.length}</strong>
-          </div>
-
-          <div className="stat-card">
-            <h3>Stock bajo</h3>
-            <strong>{stockBajo}</strong>
-          </div>
-
-          <div className="stat-card">
-            <h3>Sin stock</h3>
-            <strong>{sinStock}</strong>
-          </div>
-        </section>
-
-        <section className="table-card">
-          <div className="actions">
-            <h2>Productos</h2>
-
-            <button
-              className="new-button"
-              onClick={() => {
-                setMostrarFormulario(!mostrarFormulario);
-                setProductoEditando(null);
-              }}
-            >
-              {mostrarFormulario ? "Cancelar" : "Nuevo producto"}
-            </button>
-          </div>
-
-          {mostrarFormulario && (
-            <form
-              className="product-form"
-              onSubmit={crearProducto}
-            >
-              <h3>Nuevo producto</h3>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Nombre</label>
-                  <input
-                    name="nombre"
-                    value={nuevoProducto.nombre}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Descripción</label>
-                  <input
-                    name="descripcion"
-                    value={nuevoProducto.descripcion}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Precio</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="precio"
-                    value={nuevoProducto.precio}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Stock</label>
-                  <input
-                    type="number"
-                    name="stock"
-                    value={nuevoProducto.stock}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Stock mínimo</label>
-                  <input
-                    type="number"
-                    name="stockMinimo"
-                    value={nuevoProducto.stockMinimo}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Categoría ID</label>
-                  <input
-                    type="number"
-                    name="categoriaId"
-                    value={nuevoProducto.categoriaId}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-
-              <button
-                className="primary-button"
-                type="submit"
-              >
-                Guardar producto
-              </button>
-            </form>
-          )}
-
-          {productoEditando && (
-            <form
-              className="product-form"
-              onSubmit={guardarEdicion}
-            >
-              <h3>Editar producto</h3>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Nombre</label>
-                  <input
-                    value={productoEditando.nombre}
-                    onChange={(e) =>
-                      setProductoEditando({
-                        ...productoEditando,
-                        nombre: e.target.value,
-                      })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Descripción</label>
-                  <input
-                    value={productoEditando.descripcion || ""}
-                    onChange={(e) =>
-                      setProductoEditando({
-                        ...productoEditando,
-                        descripcion: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Precio</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={productoEditando.precio}
-                    onChange={(e) =>
-                      setProductoEditando({
-                        ...productoEditando,
-                        precio: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Stock</label>
-                  <input
-                    type="number"
-                    value={productoEditando.stock}
-                    onChange={(e) =>
-                      setProductoEditando({
-                        ...productoEditando,
-                        stock: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Stock mínimo</label>
-                  <input
-                    type="number"
-                    value={productoEditando.stockMinimo}
-                    onChange={(e) =>
-                      setProductoEditando({
-                        ...productoEditando,
-                        stockMinimo: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Categoría ID</label>
-                  <input
-                    type="number"
-                    value={productoEditando.categoriaId}
-                    onChange={(e) =>
-                      setProductoEditando({
-                        ...productoEditando,
-                        categoriaId: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="form-actions">
-                <button
-                  className="primary-button"
-                  type="submit"
-                >
-                  Guardar cambios
-                </button>
-
-                <button
-                  className="cancel-button"
-                  type="button"
-                  onClick={() => setProductoEditando(null)}
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          )}
-
-          {error && <p>{error}</p>}
-
-          <table className="products-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Precio</th>
-                <th>Stock</th>
-                <th>Stock mínimo</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {productos.map((producto) => (
-                <tr key={producto.id}>
-                  <td>{producto.id}</td>
-                  <td>{producto.nombre}</td>
-                  <td>${producto.precio}</td>
-
-                  <td
-                    className={
-                      producto.stock <= producto.stockMinimo
-                        ? "low-stock"
-                        : ""
-                    }
-                  >
-                    {producto.stock}
-                  </td>
-
-                  <td>{producto.stockMinimo}</td>
-
-                  <td>
-                    <button
-                      className="edit-button"
-                      onClick={() => editarProducto(producto)}
-                    >
-                      Editar
-                    </button>
-
-                    <button
-                      className="delete-button"
-                      onClick={() =>
-                        eliminarProducto(producto.id)
-                      }
-                    >
-                      Eliminar
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-      </main>
-    </div>
+  const campo = (nombre, label, tipo = "text", extra = {}) => (
+    <label className="form-group" key={nombre}>{label}
+      <input type={tipo} value={form[nombre]} onChange={e => setForm({ ...form, [nombre]: e.target.value })} required={nombre !== "descripcion"} min={tipo === "number" ? 0 : undefined} {...extra} />
+    </label>
   );
-}
+  const dinero = valor => Number(valor).toLocaleString("es-AR", { style: "currency", currency: "ARS" });
 
-export default Dashboard;
+  return <div className="dashboard">
+    <aside className="sidebar">
+      <h2>StockManager</h2>
+      {["Dashboard", "Productos", "Categorías", "Movimientos"].map(s =>
+        <button type="button" key={s} className={"sidebar-item " + (seccion === s ? "active" : "")} onClick={() => { setSeccion(s); setError(""); setMensaje(""); }}>{s}</button>
+      )}
+    </aside>
+    <main className="main-content">
+      <header className="topbar"><div><h1>{seccion}</h1><p>Gestión de inventario</p></div>
+        <button className="logout-button" onClick={() => { localStorage.removeItem("token"); window.location.reload(); }}>Cerrar sesión</button>
+      </header>
+      {error && <p role="alert" className="notice error">{error}</p>}
+      {mensaje && <p role="status" className="notice">{mensaje}</p>}
+      {cargando && <p>Cargando información...</p>}
+      {seccion === "Dashboard" && <section className="stats">
+        <div className="stat-card"><h3>Productos</h3><strong>{productos.length}</strong></div>
+        <div className="stat-card"><h3>Stock bajo</h3><strong>{productos.filter(p => p.stock > 0 && p.stock <= p.stockMinimo).length}</strong></div>
+        <div className="stat-card"><h3>Sin stock</h3><strong>{productos.filter(p => p.stock === 0).length}</strong></div>
+        <div className="stat-card"><h3>Categorías</h3><strong>{categorias.length}</strong></div>
+        <div className="stat-card"><h3>Movimientos</h3><strong>{movimientos.length}</strong></div>
+      </section>}
+      {seccion === "Productos" && <section className="table-card">
+        <h2>{editId ? "Editar producto" : "Nuevo producto"}</h2>
+        <form className="product-form" onSubmit={guardarProducto}>
+          <div className="form-row">
+            {campo("nombre", "Nombre", "text", { maxLength: 150 })}
+            {campo("descripcion", "Descripción", "text", { maxLength: 255 })}
+            {campo("precio", "Precio", "number", { step: "0.01" })}
+            {!editId && campo("stock", "Stock inicial", "number", { step: "1" })}
+            {campo("stockMinimo", "Stock mínimo", "number", { step: "1" })}
+            <label className="form-group">Categoría
+              <select required value={form.categoriaId} onChange={e => setForm({ ...form, categoriaId: e.target.value })}>
+                <option value="">Seleccionar</option>{categorias.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="form-actions"><button className="primary-button" type="submit">Guardar</button>
+            {editId && <button type="button" className="cancel-button" onClick={() => { setEditId(null); setForm(initial); }}>Cancelar</button>}
+          </div>
+        </form>
+        <h2>Listado de productos</h2>
+        <div className="table-scroll"><table className="products-table"><thead><tr><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Mínimo</th><th>Acciones</th></tr></thead>
+          <tbody>{productos.map(p => <tr key={p.id}><td>{p.nombre}</td><td>{categorias.find(c => c.id === p.categoriaId)?.nombre || p.categoriaId}</td><td>{dinero(p.precio)}</td><td className={p.stock <= p.stockMinimo ? "low-stock" : ""}>{p.stock}</td><td>{p.stockMinimo}</td>
+            <td><button className="edit-button" onClick={() => { setEditId(p.id); setForm(p); }}>Editar</button>
+              <button className="delete-button" onClick={() => { if (window.confirm("¿Eliminar producto?")) ejecutar(() => request("/Productos/" + p.id, { method: "DELETE" }), "Producto eliminado."); }}>Eliminar</button></td></tr>)}</tbody>
+        </table></div>
+      </section>}
+      {seccion === "Categorías" && <section className="table-card">
+        <h2>{categoriaEditId ? "Editar categoría" : "Nueva categoría"}</h2>
+        <form className="inline-form" onSubmit={guardarCategoria}><input required maxLength={100} placeholder="Nombre" value={categoriaNombre} onChange={e => setCategoriaNombre(e.target.value)} /><button className="primary-button">Guardar</button>
+          {categoriaEditId && <button type="button" className="cancel-button" onClick={() => { setCategoriaEditId(null); setCategoriaNombre(""); }}>Cancelar</button>}</form>
+        <div className="table-scroll"><table className="products-table"><thead><tr><th>Nombre</th><th>Acciones</th></tr></thead><tbody>{categorias.map(c => <tr key={c.id}><td>{c.nombre}</td><td>
+          <button className="edit-button" onClick={() => { setCategoriaEditId(c.id); setCategoriaNombre(c.nombre); }}>Editar</button>
+          <button className="delete-button" onClick={() => { if (window.confirm("¿Eliminar categoría?")) ejecutar(() => request("/Categorias/" + c.id, { method: "DELETE" }), "Categoría eliminada."); }}>Eliminar</button>
+        </td></tr>)}</tbody></table></div>
+      </section>}
+      {seccion === "Movimientos" && <section className="table-card">
+        <h2>Registrar movimiento</h2>
+        <form className="product-form" onSubmit={registrarMovimiento}><div className="form-row">
+          <label className="form-group">Producto<select required value={mov.productoId} onChange={e => setMov({ ...mov, productoId: e.target.value })}><option value="">Seleccionar</option>{productos.map(p => <option key={p.id} value={p.id}>{p.nombre} ({p.stock} disponibles)</option>)}</select></label>
+          <label className="form-group">Tipo<select value={mov.tipo} onChange={e => setMov({ ...mov, tipo: e.target.value })}><option value="entrada">Entrada</option><option value="salida">Salida</option></select></label>
+          <label className="form-group">Cantidad<input type="number" min="1" step="1" required value={mov.cantidad} onChange={e => setMov({ ...mov, cantidad: e.target.value })} /></label>
+          <label className="form-group">Motivo<input maxLength={150} value={mov.motivo} onChange={e => setMov({ ...mov, motivo: e.target.value })} /></label>
+        </div><button className="primary-button">Registrar</button></form>
+        <h2>Historial reciente</h2>
+        <div className="table-scroll"><table className="products-table"><thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th>Cantidad</th><th>Motivo</th></tr></thead><tbody>{movimientos.map(m => <tr key={m.id}><td>{new Date(m.fecha).toLocaleString("es-AR")}</td><td>{productos.find(p => p.id === m.productoId)?.nombre || m.productoId}</td><td>{m.tipo}</td><td>{m.cantidad}</td><td>{m.motivo || "—"}</td></tr>)}</tbody></table></div>
+      </section>}
+    </main>
+  </div>;
+}
