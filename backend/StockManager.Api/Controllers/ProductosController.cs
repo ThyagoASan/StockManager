@@ -3,73 +3,61 @@ using Microsoft.EntityFrameworkCore;
 using StockManager.Api.Data;
 using StockManager.Api.Models;
 using Microsoft.AspNetCore.Authorization;
+using System.ComponentModel.DataAnnotations;
 
 namespace StockManager.Api.Controllers;
+public record ProductoDto([property: Required, StringLength(150)] string Nombre, [property: StringLength(255)] string? Descripcion, [property: Range(0, 99999999)] decimal Precio, [property: Range(0, int.MaxValue)] int Stock, [property: Range(0, int.MaxValue)] int StockMinimo, int CategoriaId);
 
-[ApiController]
-[Route("api/[controller]")]
-[Authorize]
-public class ProductosController : ControllerBase
+[ApiController, Route("api/[controller]"), Authorize]
+public class ProductosController(ApplicationDbContext db) : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
-
-    public ProductosController(ApplicationDbContext context)
-    {
-        _context = context;
-    }
-
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Producto>>> GetProductos()
+    public async Task<IActionResult> Listar() => Ok(await db.Productos.OrderBy(p => p.Id).ToListAsync());
+
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> Obtener(int id)
     {
-        return Ok(await _context.Productos.ToListAsync());
-    }
-
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Producto>> GetProducto(int id)
-    {
-        var producto = await _context.Productos.FindAsync(id);
-
-        if (producto == null)
-            return NotFound();
-
-        return Ok(producto);
+        var producto = await db.Productos.FindAsync(id);
+        return producto is null ? NotFound() : Ok(producto);
     }
 
     [HttpPost]
-    public async Task<ActionResult<Producto>> CrearProducto(Producto producto)
+    public async Task<IActionResult> Crear(ProductoDto dto)
     {
-        producto.FechaCreacion = DateTime.Now;
-
-        _context.Productos.Add(producto);
-        await _context.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(GetProducto), new { id = producto.Id }, producto);
+        if (string.IsNullOrWhiteSpace(dto.Nombre)) return BadRequest("Nombre requerido.");
+        if (!await db.Categorias.AnyAsync(c => c.Id == dto.CategoriaId)) return BadRequest("Categoría inexistente.");
+        var producto = new Producto { Nombre = dto.Nombre.Trim(), Descripcion = dto.Descripcion?.Trim(), Precio = dto.Precio, Stock = dto.Stock, StockMinimo = dto.StockMinimo, CategoriaId = dto.CategoriaId, FechaCreacion = DateTime.UtcNow };
+        db.Productos.Add(producto);
+        await db.SaveChangesAsync();
+        return CreatedAtAction(nameof(Obtener), new { id = producto.Id }, producto);
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> ActualizarProducto(int id, Producto producto)
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Editar(int id, ProductoDto dto)
     {
-        if (id != producto.Id)
-            return BadRequest();
-
-        _context.Entry(producto).State = EntityState.Modified;
-
-        await _context.SaveChangesAsync();
-
+        var producto = await db.Productos.FindAsync(id);
+        if (producto is null) return NotFound();
+        if (string.IsNullOrWhiteSpace(dto.Nombre)) return BadRequest("Nombre requerido.");
+        if (!await db.Categorias.AnyAsync(c => c.Id == dto.CategoriaId)) return BadRequest("Categoría inexistente.");
+        producto.Nombre = dto.Nombre.Trim();
+        producto.Descripcion = dto.Descripcion?.Trim();
+        producto.Precio = dto.Precio;
+        producto.StockMinimo = dto.StockMinimo;
+        producto.CategoriaId = dto.CategoriaId;
+        // Las variaciones de existencias se registran exclusivamente mediante movimientos.
+        if (producto.Stock != dto.Stock) return BadRequest("Modificar stock desde Movimientos.");
+        await db.SaveChangesAsync();
         return NoContent();
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> EliminarProducto(int id)
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Eliminar(int id)
     {
-        var producto = await _context.Productos.FindAsync(id);
-
-        if (producto == null)
-            return NotFound();
-
-        _context.Productos.Remove(producto);
-        await _context.SaveChangesAsync();
-
+        var producto = await db.Productos.FindAsync(id);
+        if (producto is null) return NotFound();
+        if (await db.MovimientosStock.AnyAsync(m => m.ProductoId == id)) return Conflict("El producto tiene movimientos asociados.");
+        db.Productos.Remove(producto);
+        await db.SaveChangesAsync();
         return NoContent();
     }
 }
