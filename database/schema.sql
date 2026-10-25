@@ -21,6 +21,7 @@ CREATE TABLE Productos (
     Nombre NVARCHAR(150) NOT NULL,
     Descripcion NVARCHAR(255),
     Precio DECIMAL(10,2) NOT NULL CHECK (Precio >= 0),
+    Moneda NVARCHAR(3) NOT NULL DEFAULT 'ARS' CHECK (Moneda IN ('ARS', 'USD')),
     Stock INT NOT NULL CHECK (Stock >= 0),
     StockMinimo INT NOT NULL DEFAULT 5 CHECK (StockMinimo >= 0),
     CategoriaId INT NOT NULL REFERENCES Categorias(Id),
