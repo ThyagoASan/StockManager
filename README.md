@@ -1,98 +1,75 @@
-# StockManager | Sistema de gestión de inventario
+# StockManager | Gestión de inventario full-stack
 
-Aplicación **full-stack** para administrar productos, categorías y movimientos de stock. Proyecto personal desarrollado para practicar la construcción de aplicaciones web con **React, ASP.NET Core y SQL Server**.
+Proyecto personal con **React + Vite**, **ASP.NET Core 10**, **Entity Framework Core** y **SQL Server**.
 
-## Tecnologías utilizadas
+## Funcionalidades implementadas en la rama de desarrollo
 
-| Área | Tecnologías |
-|---|---|
-| Frontend | React, JavaScript, Vite |
-| Backend | C#, ASP.NET Core 10 Web API |
-| Persistencia | Entity Framework Core, SQL Server |
-| Seguridad | Autenticación con JWT |
-| Documentación de API | OpenAPI / Swagger |
-| Control de versiones | Git y GitHub |
+- Inicio de sesión con JWT y contraseñas verificadas mediante BCrypt.
+- CRUD de productos y categorías.
+- Entradas y salidas de inventario con registro de movimientos.
+- Prevención de salidas superiores al stock disponible.
+- Indicadores de productos con stock bajo o agotado.
+- Navegación entre dashboard, productos, categorías y movimientos.
+- Validaciones básicas y endpoints protegidos por autenticación.
 
-## Funcionalidades del proyecto
-
-- Inicio de sesión y manejo de autenticación mediante tokens JWT.
-- Gestión de productos y categorías.
-- Registro y consulta de movimientos de inventario.
-- Comunicación entre el frontend React y la API REST.
-- Operaciones de consulta y mantenimiento de datos mediante Entity Framework Core.
-
-## Arquitectura
-
-El proyecto separa la interfaz de usuario de la API y la persistencia:
-
-```text
-React (frontend)
-      |
-      | HTTP / JSON
-      v
-ASP.NET Core Web API (backend)
-      |
-      v
-Entity Framework Core
-      |
-      v
-SQL Server
-```
-
-Esta estructura permite desarrollar y mantener la interfaz y los servicios del servidor de forma independiente.
-
-## Estructura general
-
-- `frontend/`: aplicación React creada con Vite.
-- `backend/StockManager.Api/`: proyecto Web API en .NET 10.
+> **Estado:** implementación en revisión. No se ha verificado la compilación del backend ni las pruebas de integración con SQL Server en un entorno real. No desplegar en producción sin validar y reforzar seguridad.
 
 ## Requisitos
 
-- .NET SDK 10.
-- Node.js y npm compatibles con la versión de Vite del proyecto.
-- SQL Server.
-- Un editor como Visual Studio o Visual Studio Code.
+- .NET SDK 10
+- Node.js compatible con Vite 8 y npm
+- SQL Server
+- Visual Studio / VS Code
 
-## Ejecución local
+## Preparación local
 
-1. Clonar el repositorio:
-
+1. Clonar el repositorio y cambiar a la rama de desarrollo:
    ```bash
    git clone https://github.com/ThyagoASan/StockManager.git
+   cd StockManager
+   git switch feature/completar-stockmanager
    ```
-
-2. Configurar la conexión local a SQL Server y los valores de autenticación necesarios en el backend. No subir contraseñas ni claves reales al repositorio.
-3. Desde `backend/StockManager.Api/`, restaurar dependencias y ejecutar la API:
-
+2. Ejecutar `database/schema.sql` en SQL Server Management Studio. El script crea la base `StockManagerDB`, las tablas y las categorías iniciales si no existen. **Hacer respaldo antes de aplicarlo a una base existente**.
+3. Ajustar la cadena de conexión en configuración local o mediante `ConnectionStrings__DefaultConnection`.
+4. Configurar la clave JWT **fuera del repositorio**:
    ```bash
-   dotnet restore
-   dotnet run
+   cd backend/StockManager.Api
+   dotnet user-secrets init
+   dotnet user-secrets set "Jwt:Key" "REEMPLAZAR_POR_UNA_CLAVE_ALEATORIA_DE_32_BYTES_O_MAS"
+   dotnet run --launch-profile http
    ```
-
-4. Desde `frontend/`, instalar dependencias e iniciar el cliente:
-
+   El valor mostrado es solo un marcador: generar una clave secreta aleatoria real. Nunca publicarla.
+5. Crear el primer usuario **solo en desarrollo**, mientras no haya usuarios, enviando un POST JSON a `http://localhost:5009/api/setup/admin`:
+   ```json
+   {"email":"admin@ejemplo.local","password":"UnaClaveLocalLargaYUnica2026!"}
+   ```
+   El endpoint deja de admitir inicialización cuando existe un usuario y no está disponible fuera del entorno Development.
+6. Iniciar el frontend desde otra terminal:
    ```bash
+   cd frontend
    npm install
    npm run dev
    ```
+   Por defecto la aplicación utiliza `http://localhost:5009/api`; se puede cambiar mediante `VITE_API_URL` en un archivo `.env.local` del frontend.
+7. Abrir la dirección local que muestra Vite, iniciar sesión y comprobar CRUD de categorías y productos, movimientos de entrada y salida y actualización de indicadores.
 
-5. Configurar la URL de la API que consume el frontend según los puertos locales del entorno.
+## Estructura
 
-**Nota:** los pasos de configuración y ejecución requieren verificación en una instalación nueva; pueden ser necesarios ajustes de base de datos, migraciones, puertos o variables de entorno.
+- `backend/StockManager.Api/`: API, autenticación, controladores y modelos.
+- `frontend/src/`: interfaz React.
+- `database/schema.sql`: esquema SQL Server.
 
-## Aprendizajes y objetivos
+## Seguridad y limitaciones
 
-Este proyecto me permite poner en práctica:
-
-- Desarrollo de APIs REST con C# y ASP.NET Core.
-- Integración frontend-backend con React.
-- Modelado y persistencia de datos con Entity Framework Core.
-- Autenticación basada en JWT.
-- Organización y evolución de un proyecto full-stack.
+- La clave JWT debe configurarse mediante secretos locales o variables de entorno.
+- No usar contraseñas fijas ni guardar credenciales en el repositorio.
+- El token se guarda actualmente en `localStorage`; para producción se requiere revisar la estrategia de sesión y las defensas contra XSS.
+- La inicialización del administrador es una herramienta de desarrollo, no un sistema de registro público.
+- Las operaciones sobre stock deben hacerse desde **Movimientos**; editar un producto no altera directamente las existencias.
+- Pendiente: pruebas automatizadas, revisión de concurrencia, manejo de errores y autorización por roles, migraciones controladas, endurecimiento de seguridad y despliegue.
 
 ## Autor
 
-**Thyago Agustín Sánchez**  
-Estudiante de Ingeniería en Sistemas · Proyecto personal de portfolio
+**Thyago Agustín Sánchez** — Estudiante de Ingeniería en Sistemas.
 
 [Perfil de GitHub](https://github.com/ThyagoASan)
