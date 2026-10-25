@@ -91,7 +91,7 @@ export default function Dashboard() {
 
   return <div className="dashboard">
     <aside className="sidebar">
-      <h2>StockManager</h2>
+      <h2 className="brand"><span className="brand-mark">S</span> StockManager</h2><p className="sidebar-caption">CONTROL DE INVENTARIO</p>
       {["Dashboard", "Productos", "Categorías", "Movimientos"].map(s =>
         <button type="button" key={s} className={"sidebar-item " + (seccion === s ? "active" : "")} onClick={() => { setSeccion(s); setError(""); setMensaje(""); }}>{s}</button>
       )}
@@ -104,11 +104,20 @@ export default function Dashboard() {
       {mensaje && <p role="status" className="notice">{mensaje}</p>}
       {cargando && <p>Cargando información...</p>}
       {seccion === "Dashboard" && <section className="stats">
-        <div className="stat-card"><h3>Productos</h3><strong>{productos.length}</strong></div>
-        <div className="stat-card"><h3>Stock bajo</h3><strong>{productos.filter(p => p.stock > 0 && p.stock <= p.stockMinimo).length}</strong></div>
-        <div className="stat-card"><h3>Sin stock</h3><strong>{productos.filter(p => p.stock === 0).length}</strong></div>
-        <div className="stat-card"><h3>Categorías</h3><strong>{categorias.length}</strong></div>
-        <div className="stat-card"><h3>Movimientos</h3><strong>{movimientos.length}</strong></div>
+        <div className="stat-card"><h3>📦 Productos</h3><strong>{productos.length}</strong></div>
+        <div className="stat-card"><h3>⚠️ Stock bajo</h3><strong>{productos.filter(p => p.stock > 0 && p.stock <= p.stockMinimo).length}</strong></div>
+        <div className="stat-card"><h3>🚫 Sin stock</h3><strong>{productos.filter(p => p.stock === 0).length}</strong></div>
+        <div className="stat-card"><h3>🗂️ Categorías</h3><strong>{categorias.length}</strong></div>
+        <div className="stat-card"><h3>↔️ Movimientos</h3><strong>{movimientos.length}</strong></div>
+      </section>}
+      {seccion === "Dashboard" && <section className="table-card dashboard-activity">
+        <div className="section-heading"><div><h2>Actividad reciente</h2><p>Últimas entradas y salidas registradas</p></div><button className="secondary-button" onClick={() => setSeccion("Movimientos")}>Ver movimientos</button></div>
+        {movimientos.length === 0 ? <p className="empty-state">Todavía no hay movimientos de inventario.</p> :
+          <div className="activity-list">{movimientos.slice(0, 5).map(m => <div className="activity-item" key={m.id}>
+            <span className={"activity-symbol " + (m.tipo === "entrada" ? "incoming" : "outgoing")}>{m.tipo === "entrada" ? "+" : "−"}</span>
+            <div className="activity-info"><strong>{productos.find(p => p.id === m.productoId)?.nombre || "Producto #" + m.productoId}</strong><small>{m.motivo || (m.tipo === "entrada" ? "Entrada de stock" : "Salida de stock")} · {new Date(m.fecha).toLocaleString("es-AR")}</small></div>
+            <strong className={m.tipo === "entrada" ? "incoming-text" : "outgoing-text"}>{m.tipo === "entrada" ? "+" : "−"}{m.cantidad} uds.</strong>
+          </div>)}</div>}
       </section>}
       {seccion === "Productos" && <section className="table-card">
         <h2>{editId ? "Editar producto" : "Nuevo producto"}</h2>
