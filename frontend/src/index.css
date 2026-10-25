@@ -17,3 +17,7 @@ input {
 button {
   cursor: pointer;
 }
+
+html, body, #root { min-height:100%; }
+body { font-family: Inter, "Segoe UI", Arial, Helvetica, sans-serif; }
+button, input, select, textarea { font-family:inherit; }
