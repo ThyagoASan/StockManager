@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:5009/api";
+const BASE = import.meta.env.VITE_API_URL || "https://localhost:7228/api";
 const initial = { nombre: "", descripcion: "", precio: 0, stock: 0, stockMinimo: 5, categoriaId: "", moneda: "ARS" };
 
 export default function Dashboard() {
