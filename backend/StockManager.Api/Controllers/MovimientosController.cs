@@ -6,7 +6,7 @@ using StockManager.Api.Data;
 using StockManager.Api.Models;
 
 namespace StockManager.Api.Controllers;
-public record CrearMovimientoDto(int ProductoId, string Tipo, int Cantidad, [property: StringLength(150)] string? Motivo);
+public record CrearMovimientoDto(int ProductoId, string Tipo, int Cantidad, [param: StringLength(150)] string? Motivo);
 
 [ApiController, Authorize, Route("api/[controller]")]
 public class MovimientosController(ApplicationDbContext db) : ControllerBase
