@@ -27,9 +27,16 @@ export default function Dashboard() {
       throw new Error("Sesión vencida");
     }
     if (!response.ok) {
+      const raw = await response.text();
       let detail;
-      try { detail = await response.json(); } catch { detail = null; }
-      throw new Error(typeof detail === "string" ? detail : detail?.mensaje || detail?.title || "Error HTTP " + response.status);
+      try { detail = JSON.parse(raw); } catch { detail = raw; }
+      const mensajeServidor = typeof detail === "string" ? detail : detail?.mensaje || detail?.detail || detail?.title;
+      const mensaje = response.status === 409 && path.startsWith("/Productos/") && options.method === "DELETE"
+        ? "No se puede eliminar el producto porque tiene movimientos de stock registrados."
+        : response.status === 409 && path === "/Movimientos"
+          ? "Stock insuficiente. No hay unidades disponibles para completar esta salida."
+          : mensajeServidor || "Error HTTP " + response.status;
+      throw new Error(mensaje);
     }
     return response.status === 204 ? null : response.json();
   }
