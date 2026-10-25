@@ -163,7 +163,7 @@ export default function Dashboard() {
               <button className="delete-button" onClick={() => { if (window.confirm("¿Eliminar producto?")) ejecutar(() => request("/Productos/" + p.id, { method: "DELETE" }), "Producto eliminado."); }}>Eliminar</button></td></tr>)}</tbody>
         </table>{productosFiltrados.length === 0 && <p className="empty-state">No hay productos que coincidan con los filtros.</p>}</div>
       </section>}
-      {seccion === "Categorías" && <section className="table-card">
+      {seccion === "Categorías" && <section className="table-card categorias-section">
         <h2>{categoriaEditId ? "Editar categoría" : "Nueva categoría"}</h2>
         <form className="inline-form" onSubmit={guardarCategoria}><input required maxLength={100} placeholder="Nombre" value={categoriaNombre} onChange={e => setCategoriaNombre(e.target.value)} /><button className="primary-button">Guardar</button>
           {categoriaEditId && <button type="button" className="cancel-button" onClick={() => { setCategoriaEditId(null); setCategoriaNombre(""); }}>Cancelar</button>}</form>
@@ -172,7 +172,7 @@ export default function Dashboard() {
           <button className="delete-button" onClick={() => { if (window.confirm("¿Eliminar categoría?")) ejecutar(() => request("/Categorias/" + c.id, { method: "DELETE" }), "Categoría eliminada."); }}>Eliminar</button>
         </td></tr>)}</tbody></table></div>
       </section>}
-      {seccion === "Movimientos" && <section className="table-card">
+      {seccion === "Movimientos" && <section className="table-card movimientos-section">
         <h2>Registrar movimiento</h2>
         <form className="product-form" onSubmit={registrarMovimiento}><div className="form-row">
           <label className="form-group">Producto<select required value={mov.productoId} onChange={e => setMov({ ...mov, productoId: e.target.value })}><option value="">Seleccionar</option>{productos.map(p => <option key={p.id} value={p.id}>{p.nombre} ({p.stock} disponibles)</option>)}</select></label>
