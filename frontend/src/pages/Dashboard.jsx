@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:5009/api";
-const initial = { nombre: "", descripcion: "", precio: 0, stock: 0, stockMinimo: 5, categoriaId: "" };
+const initial = { nombre: "", descripcion: "", precio: 0, stock: 0, stockMinimo: 5, categoriaId: "", moneda: "ARS" };
 
 export default function Dashboard() {
   const [seccion, setSeccion] = useState("Dashboard");
@@ -80,7 +80,7 @@ export default function Dashboard() {
       <input type={tipo} value={form[nombre]} onChange={e => setForm({ ...form, [nombre]: e.target.value })} required={nombre !== "descripcion"} min={tipo === "number" ? 0 : undefined} {...extra} />
     </label>
   );
-  const dinero = valor => Number(valor).toLocaleString("es-AR", { style: "currency", currency: "ARS" });
+  const dinero = (valor, moneda = "ARS") => Number(valor).toLocaleString("es-AR", { style: "currency", currency: moneda === "USD" ? "USD" : "ARS" });
 
   return <div className="dashboard">
     <aside className="sidebar">
@@ -110,6 +110,7 @@ export default function Dashboard() {
             {campo("nombre", "Nombre", "text", { maxLength: 150 })}
             {campo("descripcion", "Descripción", "text", { maxLength: 255 })}
             {campo("precio", "Precio", "number", { step: "0.01" })}
+            <label className="form-group">Moneda<select value={form.moneda || "ARS"} onChange={e => setForm({ ...form, moneda: e.target.value })}><option value="ARS">ARS — Pesos argentinos</option><option value="USD">USD — Dólares estadounidenses</option></select></label>
             {!editId && campo("stock", "Stock inicial", "number", { step: "1" })}
             {campo("stockMinimo", "Stock mínimo", "number", { step: "1" })}
             <label className="form-group">Categoría
@@ -124,7 +125,7 @@ export default function Dashboard() {
         </form>
         <h2>Listado de productos</h2>
         <div className="table-scroll"><table className="products-table"><thead><tr><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Mínimo</th><th>Acciones</th></tr></thead>
-          <tbody>{productos.map(p => <tr key={p.id}><td>{p.nombre}</td><td>{categorias.find(c => c.id === p.categoriaId)?.nombre || p.categoriaId}</td><td>{dinero(p.precio)}</td><td className={p.stock <= p.stockMinimo ? "low-stock" : ""}>{p.stock}</td><td>{p.stockMinimo}</td>
+          <tbody>{productos.map(p => <tr key={p.id}><td>{p.nombre}</td><td>{categorias.find(c => c.id === p.categoriaId)?.nombre || p.categoriaId}</td><td>{dinero(p.precio, p.moneda)}</td><td className={p.stock <= p.stockMinimo ? "low-stock" : ""}>{p.stock}</td><td>{p.stockMinimo}</td>
             <td><button className="edit-button" onClick={() => { setEditId(p.id); setForm(p); }}>Editar</button>
               <button className="delete-button" onClick={() => { if (window.confirm("¿Eliminar producto?")) ejecutar(() => request("/Productos/" + p.id, { method: "DELETE" }), "Producto eliminado."); }}>Eliminar</button></td></tr>)}</tbody>
         </table></div>
