@@ -15,6 +15,10 @@ export default function Dashboard() {
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroCategoria, setFiltroCategoria] = useState("");
+  const [filtroMoneda, setFiltroMoneda] = useState("");
+  const [filtroStock, setFiltroStock] = useState("todos");
 
   async function request(path, options = {}) {
     const response = await fetch(BASE + path, {
@@ -89,6 +93,12 @@ export default function Dashboard() {
   );
   const dinero = (valor, moneda = "ARS") => Number(valor).toLocaleString("es-AR", { style: "currency", currency: moneda === "USD" ? "USD" : "ARS" });
 
+  const productosFiltrados = productos.filter(p =>
+    p.nombre.toLocaleLowerCase("es").includes(busqueda.trim().toLocaleLowerCase("es")) &&
+    (!filtroCategoria || String(p.categoriaId) === filtroCategoria) &&
+    (!filtroMoneda || (p.moneda || "ARS") === filtroMoneda) &&
+    (filtroStock === "todos" || (filtroStock === "bajo" ? p.stock > 0 && p.stock <= p.stockMinimo : p.stock === 0))
+  );
   return <div className="dashboard">
     <aside className="sidebar">
       <h2 className="brand"><span className="brand-mark">S</span> StockManager</h2><p className="sidebar-caption">CONTROL DE INVENTARIO</p>
@@ -139,12 +149,19 @@ export default function Dashboard() {
             {editId && <button type="button" className="cancel-button" onClick={() => { setEditId(null); setForm(initial); }}>Cancelar</button>}
           </div>
         </form>
-        <h2>Listado de productos</h2>
+        <div className="section-heading"><div><h2>Listado de productos</h2><p>{productosFiltrados.length} de {productos.length} productos</p></div></div>
+        <div className="product-filters">
+          <label>Buscar<input type="search" placeholder="Nombre del producto..." value={busqueda} onChange={e => setBusqueda(e.target.value)} /></label>
+          <label>Categoría<select value={filtroCategoria} onChange={e => setFiltroCategoria(e.target.value)}><option value="">Todas</option>{categorias.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}</select></label>
+          <label>Moneda<select value={filtroMoneda} onChange={e => setFiltroMoneda(e.target.value)}><option value="">Todas</option><option value="ARS">ARS</option><option value="USD">USD</option></select></label>
+          <label>Stock<select value={filtroStock} onChange={e => setFiltroStock(e.target.value)}><option value="todos">Todos</option><option value="bajo">Stock bajo</option><option value="sin">Sin stock</option></select></label>
+          <button type="button" className="secondary-button" onClick={() => {setBusqueda("");setFiltroCategoria("");setFiltroMoneda("");setFiltroStock("todos");}}>Limpiar</button>
+        </div>
         <div className="table-scroll"><table className="products-table"><thead><tr><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Mínimo</th><th>Acciones</th></tr></thead>
-          <tbody>{productos.map(p => <tr key={p.id}><td>{p.nombre}</td><td>{categorias.find(c => c.id === p.categoriaId)?.nombre || p.categoriaId}</td><td>{dinero(p.precio, p.moneda)}</td><td className={p.stock <= p.stockMinimo ? "low-stock" : ""}>{p.stock}</td><td>{p.stockMinimo}</td>
+          <tbody>{productosFiltrados.map(p => <tr key={p.id}><td>{p.nombre}</td><td>{categorias.find(c => c.id === p.categoriaId)?.nombre || p.categoriaId}</td><td>{dinero(p.precio, p.moneda)}</td><td className={p.stock <= p.stockMinimo ? "low-stock" : ""}>{p.stock}</td><td>{p.stockMinimo}</td>
             <td><button className="edit-button" onClick={() => { setEditId(p.id); setForm(p); }}>Editar</button>
               <button className="delete-button" onClick={() => { if (window.confirm("¿Eliminar producto?")) ejecutar(() => request("/Productos/" + p.id, { method: "DELETE" }), "Producto eliminado."); }}>Eliminar</button></td></tr>)}</tbody>
-        </table></div>
+        </table>{productosFiltrados.length === 0 && <p className="empty-state">No hay productos que coincidan con los filtros.</p>}</div>
       </section>}
       {seccion === "Categorías" && <section className="table-card">
         <h2>{categoriaEditId ? "Editar categoría" : "Nueva categoría"}</h2>
