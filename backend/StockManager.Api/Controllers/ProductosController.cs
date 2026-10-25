@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.ComponentModel.DataAnnotations;
 
 namespace StockManager.Api.Controllers;
-public record ProductoDto([property: Required, StringLength(150)] string Nombre, [property: StringLength(255)] string? Descripcion, [property: Range(0, 99999999)] decimal Precio, [property: Range(0, int.MaxValue)] int Stock, [property: Range(0, int.MaxValue)] int StockMinimo, int CategoriaId);
+public record ProductoDto([param: Required, StringLength(150)] string Nombre, [param: StringLength(255)] string? Descripcion, [param: Range(0, 99999999)] decimal Precio, [param: Range(0, int.MaxValue)] int Stock, [param: Range(0, int.MaxValue)] int StockMinimo, int CategoriaId);
 
 [ApiController, Route("api/[controller]"), Authorize]
 public class ProductosController(ApplicationDbContext db) : ControllerBase
