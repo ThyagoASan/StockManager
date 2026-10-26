@@ -46,7 +46,11 @@ StockManager/
 ├── database/
 │   └── schema.sql               # Esquema inicial SQL Server
 ├── StockManager.slnx
-└── iniciar-stockmanager.bat     # Inicio local en Windows
+├── iniciar-stockmanager.bat     # Inicio con consolas visibles
+├── abrir-stockmanager.bat       # Inicio oculto en Windows
+├── iniciar-stockmanager-oculto.ps1
+├── cerrar-stockmanager.bat      # Cierre de servidores
+└── cerrar-stockmanager.ps1
 ```
 
 El frontend consume la API mediante peticiones HTTP(S). La API valida las solicitudes, utiliza Entity Framework Core para consultar o actualizar SQL Server y protege los endpoints correspondientes con JWT.
@@ -124,7 +128,29 @@ iniciar-stockmanager.bat
 
 El iniciador abre la API y Vite en ventanas separadas, espera a que responda el frontend y abre la aplicación en el navegador. Mantener ambas ventanas abiertas mientras se utiliza StockManager.
 
-**Opción B — Inicio manual**
+**Opción B — Inicio y cierre sin consolas visibles (Windows)**
+
+Después de instalar las dependencias y configurar SQL Server, .NET y JWT, ejecutá desde la raíz del proyecto:
+
+```text
+abrir-stockmanager.bat
+```
+
+El iniciador utiliza `iniciar-stockmanager-oculto.ps1` para ejecutar la API y Vite en segundo plano, comprobar que los servidores estén escuchando en los puertos locales `7228` y `5173` y abrir StockManager en el navegador. El inicio puede tardar unos segundos. No hace falta mantener abiertas las consolas.
+
+Cuando termines de utilizar la aplicación, ejecutá:
+
+```text
+cerrar-stockmanager.bat
+```
+
+El script de cierre identifica los procesos locales de StockManager y detiene los servidores; cerrar solamente la pestaña del navegador **no** detiene la API ni Vite. El cierre muestra una consola de confirmación que se puede cerrar presionando una tecla.
+
+Los archivos `.ps1` son scripts auxiliares invocados por los archivos `.bat`. El archivo temporal `.stockmanager-pids` se genera localmente y está excluido del repositorio mediante `.gitignore`.
+
+Esta opción está diseñada para **desarrollo local en Windows**; no equivale a instalar un servicio de Windows ni a desplegar la aplicación en producción.
+
+**Opción C — Inicio manual**
 
 En una terminal:
 
