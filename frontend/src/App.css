@@ -969,11 +969,126 @@
     content: "Motivo";
 
   }
-
 }
-
 /* Tipografía consistente en todo StockManager */
 body, button, input, select, textarea {
   font-family: Inter, "Segoe UI", Arial, sans-serif;
 }
-  
+/* CONFIGURACIÓN INICIAL - STOCKMANAGER */
+
+.setup-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #111827, #1f2937);
+}
+
+.setup-card {
+  width: 100%;
+  max-width: 460px;
+  padding: 36px;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.setup-card h1 {
+  margin: 0 0 8px;
+  text-align: center;
+  color: #111827;
+  font-size: 30px;
+}
+
+.setup-card h2 {
+  margin: 0 0 12px;
+  text-align: center;
+  color: #2563eb;
+  font-size: 20px;
+}
+
+.setup-card > p {
+  margin: 0 0 28px;
+  text-align: center;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.setup-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.setup-card form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.setup-card input {
+  width: 100%;
+  min-height: 46px;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 9px;
+  background: #f8fafc;
+  color: #111827;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.setup-card input:focus {
+  outline: 2px solid #93c5fd;
+  outline-offset: 1px;
+  border-color: #2563eb;
+}
+
+.setup-card button {
+  width: 100%;
+  min-height: 46px;
+  padding: 12px;
+  border: none;
+  border-radius: 9px;
+  background: #2563eb;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.setup-card button:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.setup-card button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.setup-card [role="alert"] {
+  margin: 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .setup-container {
+    padding: 16px;
+  }
+
+  .setup-card {
+    padding: 26px 20px;
+  }
+
+  .setup-card h1 {
+    font-size: 26px;
+  }
+}
