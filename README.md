@@ -1,75 +1,187 @@
-# StockManager | Gestión de inventario full-stack
+# StockManager — Sistema de gestión de inventario
 
-Proyecto personal con **React + Vite**, **ASP.NET Core 10**, **Entity Framework Core** y **SQL Server**.
+**Aplicación web full-stack** para administrar productos, categorías y movimientos de stock desde un panel centralizado.
 
-## Funcionalidades implementadas en la rama de desarrollo
+Desarrollada como proyecto personal de portfolio, con una API REST en **ASP.NET Core 10**, interfaz en **React + Vite** y persistencia en **SQL Server**.
 
-- Inicio de sesión con JWT y contraseñas verificadas mediante BCrypt.
-- CRUD de productos y categorías.
-- Entradas y salidas de inventario con registro de movimientos.
-- Prevención de salidas superiores al stock disponible.
-- Indicadores de productos con stock bajo o agotado.
-- Navegación entre dashboard, productos, categorías y movimientos.
-- Validaciones básicas y endpoints protegidos por autenticación.
+## Funcionalidades
 
-> **Estado:** implementación en revisión. No se ha verificado la compilación del backend ni las pruebas de integración con SQL Server en un entorno real. No desplegar en producción sin validar y reforzar seguridad.
+- **Inicio de sesión:** autenticación con JWT y verificación de contraseñas mediante BCrypt.
+- **Dashboard:** indicadores de productos, categorías, movimientos, stock bajo y productos agotados; actividad reciente.
+- **Productos:** alta, consulta, modificación y eliminación; descripción, precio, moneda (ARS/USD), categoría y stock mínimo.
+- **Búsqueda y filtros:** por nombre, categoría, moneda y disponibilidad.
+- **Categorías:** gestión de categorías de productos.
+- **Movimientos de inventario:** registro de entradas y salidas con cantidad, motivo y fecha.
+- **Control de existencias:** validación para evitar salidas superiores al stock disponible.
+- **Interfaz adaptable:** navegación entre dashboard, productos, categorías y movimientos.
+
+## Tecnologías
+
+| Capa | Tecnologías |
+| --- | --- |
+| Frontend | React 19, JavaScript, HTML, CSS, Vite 8 |
+| Backend | C#, ASP.NET Core 10, Web API REST |
+| Datos | SQL Server, Entity Framework Core 10 |
+| Autenticación | JWT, BCrypt |
+| Documentación de API | Swagger / OpenAPI |
+| Herramientas | Visual Studio, VS Code, Git y GitHub |
+
+## Arquitectura y estructura
+
+```text
+StockManager/
+├── backend/
+│   └── StockManager.Api/
+│       ├── Controllers/         # Endpoints HTTP
+│       ├── Data/                # DbContext y acceso a datos
+│       ├── Models/              # Entidades y modelos
+│       ├── Program.cs           # Servicios y middleware
+│       └── StockManager.Api.csproj
+├── frontend/
+│   ├── src/
+│   │   ├── pages/               # Login y dashboard
+│   │   └── services/            # Cliente de autenticación
+│   └── package.json
+├── database/
+│   └── schema.sql               # Esquema inicial SQL Server
+├── StockManager.slnx
+└── iniciar-stockmanager.bat     # Inicio local en Windows
+```
+
+El frontend consume la API mediante peticiones HTTP(S). La API valida las solicitudes, utiliza Entity Framework Core para consultar o actualizar SQL Server y protege los endpoints correspondientes con JWT.
 
 ## Requisitos
 
-- .NET SDK 10
-- Node.js compatible con Vite 8 y npm
-- SQL Server
-- Visual Studio / VS Code
+- Windows para utilizar el iniciador `.bat` (en otros sistemas, iniciar ambos servidores manualmente).
+- **.NET SDK 10**.
+- **Node.js y npm** compatibles con Vite 8.
+- **SQL Server** y, opcionalmente, SQL Server Management Studio (SSMS).
+- Visual Studio o VS Code (opcionales para ejecutar, útiles para desarrollar).
 
-## Preparación local
+## Instalación y ejecución local
 
-1. Clonar el repositorio y cambiar a la rama de desarrollo:
-   ```bash
-   git clone https://github.com/ThyagoASan/StockManager.git
-   cd StockManager
-   git switch feature/completar-stockmanager
-   ```
-2. Ejecutar `database/schema.sql` en SQL Server Management Studio. El script crea la base `StockManagerDB`, las tablas y las categorías iniciales si no existen. **Hacer respaldo antes de aplicarlo a una base existente**.
-3. Ajustar la cadena de conexión en configuración local o mediante `ConnectionStrings__DefaultConnection`.
-4. Configurar la clave JWT **fuera del repositorio**:
-   ```bash
-   cd backend/StockManager.Api
-   dotnet user-secrets init
-   dotnet user-secrets set "Jwt:Key" "REEMPLAZAR_POR_UNA_CLAVE_ALEATORIA_DE_32_BYTES_O_MAS"
-   dotnet run --launch-profile http
-   ```
-   El valor mostrado es solo un marcador: generar una clave secreta aleatoria real. Nunca publicarla.
-5. Crear el primer usuario **solo en desarrollo**, mientras no haya usuarios, enviando un POST JSON a `http://localhost:5009/api/setup/admin`:
-   ```json
-   {"email":"admin@ejemplo.local","password":"UnaClaveLocalLargaYUnica2026!"}
-   ```
-   El endpoint deja de admitir inicialización cuando existe un usuario y no está disponible fuera del entorno Development.
-6. Iniciar el frontend desde otra terminal:
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-   Por defecto la aplicación utiliza `http://localhost:5009/api`; se puede cambiar mediante `VITE_API_URL` en un archivo `.env.local` del frontend.
-7. Abrir la dirección local que muestra Vite, iniciar sesión y comprobar CRUD de categorías y productos, movimientos de entrada y salida y actualización de indicadores.
+### 1. Clonar el repositorio
 
-## Estructura
+```bash
+git clone https://github.com/ThyagoASan/StockManager.git
+cd StockManager
+```
 
-- `backend/StockManager.Api/`: API, autenticación, controladores y modelos.
-- `frontend/src/`: interfaz React.
-- `database/schema.sql`: esquema SQL Server.
+Trabajar sobre la rama `main`.
 
-## Seguridad y limitaciones
+### 2. Preparar SQL Server
 
-- La clave JWT debe configurarse mediante secretos locales o variables de entorno.
-- No usar contraseñas fijas ni guardar credenciales en el repositorio.
-- El token se guarda actualmente en `localStorage`; para producción se requiere revisar la estrategia de sesión y las defensas contra XSS.
-- La inicialización del administrador es una herramienta de desarrollo, no un sistema de registro público.
-- Las operaciones sobre stock deben hacerse desde **Movimientos**; editar un producto no altera directamente las existencias.
-- Pendiente: pruebas automatizadas, revisión de concurrencia, manejo de errores y autorización por roles, migraciones controladas, endurecimiento de seguridad y despliegue.
+Ejecutar `database/schema.sql` desde SSMS. El script crea `StockManagerDB`, sus tablas y categorías iniciales si no existen.
+
+**Importante:** hacer una copia de seguridad antes de ejecutar scripts sobre una base con datos.
+
+Configurar la cadena de conexión `ConnectionStrings:DefaultConnection` para la instancia local de SQL Server. Puede establecerse mediante configuración local no publicada o la variable de entorno `ConnectionStrings__DefaultConnection`.
+
+### 3. Configurar JWT de forma segura
+
+Desde la carpeta del backend:
+
+```powershell
+cd backend/StockManager.Api
+dotnet user-secrets set "Jwt:Key" "REEMPLAZAR_POR_UN_SECRETO_ALEATORIO_DE_32_BYTES_O_MAS"
+```
+
+El valor anterior es **un ejemplo**, no una clave para utilizar. Generar una clave aleatoria propia y no subirla al repositorio. Configurar también `Jwt:Issuer` y `Jwt:Audience` según la configuración de la aplicación.
+
+### 4. Instalar las dependencias del frontend
+
+Desde la raíz del repositorio:
+
+```powershell
+cd frontend
+npm install
+cd ..
+```
+
+### 5. Crear el primer usuario (solo en desarrollo)
+
+Si la tabla `Usuarios` está vacía, iniciar la API y enviar una solicitud `POST` a:
+
+```text
+https://localhost:7228/api/setup/admin
+```
+
+Con un cuerpo JSON como este:
+
+```json
+{
+  "email": "admin@ejemplo.local",
+  "password": "REEMPLAZAR_POR_UNA_CLAVE_LARGA_Y_UNICA"
+}
+```
+
+Este endpoint está disponible únicamente en **Development** y deja de permitir la inicialización cuando ya existe algún usuario. No hay credenciales universales incluidas en el repositorio.
+
+### 6. Iniciar StockManager
+
+**Opción A — Inicio automático en Windows**
+
+Desde la raíz del proyecto, ejecutar:
+
+```text
+iniciar-stockmanager.bat
+```
+
+El iniciador abre la API y Vite en ventanas separadas, espera a que responda el frontend y abre la aplicación en el navegador. Mantener ambas ventanas abiertas mientras se utiliza StockManager.
+
+**Opción B — Inicio manual**
+
+En una terminal:
+
+```powershell
+cd backend/StockManager.Api
+dotnet run --launch-profile https
+```
+
+En otra terminal, desde la raíz:
+
+```powershell
+cd frontend
+npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
+```
+
+Direcciones locales:
+
+| Servicio | URL |
+| --- | --- |
+| Frontend | http://127.0.0.1:5173 |
+| API HTTPS | https://localhost:7228 |
+| Swagger UI (Development) | https://localhost:7228/swagger/index.html |
+
+El inicio de sesión del frontend utiliza `https://localhost:7228/api`. El dashboard admite `VITE_API_URL` como alternativa para configurar su URL base. Si se cambian los puertos u orígenes, revisar también la política CORS del backend.
+
+## Flujo de uso
+
+1. Iniciar sesión con un usuario creado en la base de datos.
+2. Crear categorías y productos.
+3. Consultar o filtrar productos y sus existencias.
+4. Registrar entradas y salidas desde **Movimientos**.
+5. Revisar el dashboard y la actividad reciente.
+
+Las modificaciones de stock posteriores al alta de un producto deben realizarse mediante movimientos para conservar el historial.
+
+## Capturas de pantalla
+
+El proyecto cuenta con una interfaz de login y un dashboard con indicadores y actividad reciente. Las capturas se incorporarán al repositorio para mostrar visualmente estas pantallas sin depender de un entorno local en ejecución.
+
+## Seguridad y mejoras pendientes
+
+Este repositorio es un **proyecto de desarrollo y portfolio**, no una implementación auditada para producción.
+
+- La clave JWT y las cadenas de conexión sensibles deben permanecer fuera del control de versiones.
+- El frontend almacena actualmente el token en `localStorage`; antes de publicar en producción debe evaluarse una estrategia de sesión más segura y reforzar la protección contra XSS.
+- El endpoint de creación del administrador es exclusivo del entorno de desarrollo.
+- Pendiente: pruebas automatizadas y de integración, revisión de concurrencia en movimientos de stock, autorización por roles, observabilidad y despliegue.
+- Antes de un despliegue público, revisar CORS, HTTPS, secretos, permisos y manejo de errores.
 
 ## Autor
 
-**Thyago Agustín Sánchez** — Estudiante de Ingeniería en Sistemas.
+**Thyago Agustín Sánchez**  
+Estudiante de Ingeniería en Sistemas · Proyecto personal full-stack
 
-[Perfil de GitHub](https://github.com/ThyagoASan)
+[GitHub](https://github.com/ThyagoASan)
