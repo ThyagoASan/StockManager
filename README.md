@@ -7,6 +7,7 @@ Desarrollada como proyecto personal de portfolio, con una API REST en **ASP.NET 
 ## Funcionalidades
 
 - **Inicio de sesión:** autenticación con JWT y verificación de contraseñas mediante BCrypt.
+- **Configuración inicial:** formulario web para crear el primer administrador en una base de datos sin usuarios (solo en Development).
 - **Dashboard:** indicadores de productos, categorías, movimientos, stock bajo y productos agotados; actividad reciente.
 - **Productos:** alta, consulta, modificación y eliminación; descripción, precio, moneda (ARS/USD), categoría y stock mínimo.
 - **Búsqueda y filtros:** por nombre, categoría, moneda y disponibilidad.
@@ -39,7 +40,7 @@ StockManager/
 │       └── StockManager.Api.csproj
 ├── frontend/
 │   ├── src/
-│   │   ├── pages/               # Login y dashboard
+│   │   ├── pages/               # Login, configuración inicial y dashboard
 │   │   └── services/            # Cliente de autenticación
 │   └── package.json
 ├── database/
@@ -100,22 +101,16 @@ cd ..
 
 ### 5. Crear el primer usuario (solo en desarrollo)
 
-Si la tabla `Usuarios` está vacía, iniciar la API y enviar una solicitud `POST` a:
+**Primero debe ejecutarse `database/schema.sql`** para crear `StockManagerDB` y las tablas `Usuarios`, `Categorias`, `Productos` y `MovimientosStock`. El formulario no crea ni migra las tablas.
 
-```text
-https://localhost:7228/api/setup/admin
-```
+Después de configurar la conexión y JWT, iniciá el backend y el frontend siguiendo el paso 6 y abrí `http://127.0.0.1:5173/`.
 
-Con un cuerpo JSON como este:
+- Si **no existen usuarios** y la API está ejecutándose en **Development**, el frontend consulta `GET /api/setup/estado` y muestra el formulario para crear el primer administrador.
+- Ingresá un correo válido, una contraseña de **al menos 12 caracteres** y su confirmación. El frontend envía `POST /api/setup/admin` y la API guarda el hash con BCrypt, no la contraseña en texto plano.
+- Cuando se crea el usuario, la aplicación muestra el inicio de sesión. Ingresá con las credenciales que acabás de elegir.
+- Si ya existe algún usuario, el formulario no se muestra y `POST /api/setup/admin` rechaza nuevos intentos con **HTTP 409 Conflict**.
 
-```json
-{
-  "email": "admin@ejemplo.local",
-  "password": "REEMPLAZAR_POR_UNA_CLAVE_LARGA_Y_UNICA"
-}
-```
-
-Este endpoint está disponible únicamente en **Development** y deja de permitir la inicialización cuando ya existe algún usuario. No hay credenciales universales incluidas en el repositorio.
+Ambos endpoints de configuración inicial están disponibles **únicamente en Development**. No hay credenciales universales incluidas en el repositorio. **No uses Development para exponer públicamente el servicio**: antes de desplegar en producción se necesita un procedimiento de aprovisionamiento seguro y una configuración específica para ese entorno.
 
 ### 6. Iniciar StockManager
 
@@ -157,7 +152,7 @@ El inicio de sesión del frontend utiliza `https://localhost:7228/api`. El dashb
 
 ## Flujo de uso
 
-1. Iniciar sesión con un usuario creado en la base de datos.
+1. En una instalación nueva, crear el administrador desde el formulario de configuración inicial (solo Development) e iniciar sesión.
 2. Crear categorías y productos.
 3. Consultar o filtrar productos y sus existencias.
 4. Registrar entradas y salidas desde **Movimientos**.
@@ -175,7 +170,8 @@ Este repositorio es un **proyecto de desarrollo y portfolio**, no una implementa
 
 - La clave JWT y las cadenas de conexión sensibles deben permanecer fuera del control de versiones.
 - El frontend almacena actualmente el token en `localStorage`; antes de publicar en producción debe evaluarse una estrategia de sesión más segura y reforzar la protección contra XSS.
-- El endpoint de creación del administrador es exclusivo del entorno de desarrollo.
+- Los endpoints de configuración inicial son exclusivos del entorno de desarrollo. Para producción se requiere otro procedimiento seguro de aprovisionamiento.
+- El esquema SQL debe prepararse antes del primer inicio; la aplicación no automatiza todavía la creación de tablas ni las migraciones.
 - Pendiente: pruebas automatizadas y de integración, revisión de concurrencia en movimientos de stock, autorización por roles, observabilidad y despliegue.
 - Antes de un despliegue público, revisar CORS, HTTPS, secretos, permisos y manejo de errores.
 
