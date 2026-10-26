@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5009/api";
+const API_URL = "https://localhost:7228/api";
 
 const api = {
   login: async (email, password) => {

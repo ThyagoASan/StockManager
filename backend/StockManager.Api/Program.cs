@@ -1,3 +1,4 @@
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -14,7 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 // OpenAPI
 builder.Services.AddOpenApi();
 
-// Base de datos
+// Base de datos SQL Server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -22,18 +23,28 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Controllers
 builder.Services.AddControllers();
 
+// =========================
+// CORS - FRONTEND REACT
+// =========================
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173")
+            .WithOrigins(
+                "http://localhost:5173",
+                "http://127.0.0.1:5173"
+            )
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
 });
 
-// Swagger
+// =========================
+// SWAGGER
+// =========================
+
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(options =>
@@ -58,11 +69,19 @@ builder.Services.AddSwaggerGen(options =>
 // AUTENTICACIÓN JWT
 // =========================
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+var jwtKey = builder.Configuration["Jwt:Key"];
+
+if (string.IsNullOrWhiteSpace(jwtKey) ||
+    Encoding.UTF8.GetByteCount(jwtKey) < 32)
+{
+    throw new InvalidOperationException(
+        "Configure Jwt:Key mediante user-secrets o variables de entorno (mínimo 32 bytes).");
+}
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        var key = builder.Configuration["Jwt:Key"];
-
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -74,15 +93,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = builder.Configuration["Jwt:Audience"],
 
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(key!))
+                Encoding.UTF8.GetBytes(jwtKey))
         };
     });
 
 builder.Services.AddAuthorization();
 
-var jwtKey = builder.Configuration["Jwt:Key"];
-if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetByteCount(jwtKey) < 32)
-    throw new InvalidOperationException("Configure Jwt:Key mediante user-secrets o variables de entorno (mínimo 32 bytes).");
+// =========================
+// CONSTRUCCIÓN DE LA APP
+// =========================
 
 var app = builder.Build();
 
@@ -98,13 +117,24 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors("AllowFrontend");
-
 app.UseHttpsRedirection();
+
+app.UseRouting();
+
+// CORS debe ejecutarse antes de autenticación
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
+// =========================
+// ENDPOINTS
+// =========================
+
 app.MapControllers();
+
+// =========================
+// INICIAR APLICACIÓN
+// =========================
 
 app.Run();
