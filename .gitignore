@@ -427,3 +427,5 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+# Archivos temporales de StockManager
+.stockmanager-pids
